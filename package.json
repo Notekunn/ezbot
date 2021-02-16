@@ -1,18 +1,24 @@
 {
-	"name": "ezbot",
-	"version": "1.0.0",
-	"description": "",
-	"main": "index.js",
-	"scripts": {
-		"test": "node test/*spec.js"
-	},
-	"keywords": [],
-	"author": "",
-	"license": "ISC",
-	"dependencies": {
-		"config": "^3.3.3",
-		"eventemitter3": "^4.0.7",
-		"facebook-chat-api": "^1.8.0",
-		"lodash": "^4.17.20"
-	}
+  "name": "@notekunn/ezbot",
+  "version": "1.0.0",
+  "description": "Updating ...",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test/*spec.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "config": "^3.3.3",
+    "eventemitter3": "^4.0.7",
+    "facebook-chat-api": "^1.8.0",
+    "lodash": "^4.17.20"
+  },
+  "directories": {
+    "example": "examples",
+    "lib": "lib",
+    "test": "test"
+  },
+  "devDependencies": {}
 }
