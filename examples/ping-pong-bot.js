@@ -7,20 +7,11 @@ const bot = new EzBot({
 	appStatePath: path.resolve(__dirname, '../appstate.json'),
 });
 
-bot.hear(['ask'], (payload, chat) => {
-	chat.conversation((convo) => {
-		convo.ask('Yêu tui không?', (payload, convo) => {
-			convo.set('love_me', payload.body);
-			convo.ask('Thật không?', (payload, convo) => {
-				convo.set('confirm', payload.body);
-				convo.say(`Bạn đã trả lời ${convo.get('love_me')}, ${convo.get('confirm')}`);
-			});
-		});
-	});
+bot.hear(['ping'], (payload, chat, data) => {
+	chat.say(`Pong!`);
 });
 bot.on('message', (payload, chat) => {
 	const text = payload.body;
-	console.log(payload);
 	chat.say(`Echo: ${text}`);
 	chat.setMessageReaction(':love:');
 });
