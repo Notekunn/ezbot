@@ -3,17 +3,17 @@ import * as login from 'facebook-chat-api';
 import * as fs from 'fs';
 import InfoMessage from './utils/InfoMessage';
 import MessageObject from './utils/MessageObject';
-import Middleware, { Callback } from './Middleware';
-import Chat from './Chat';
+import { Callback, Middleware } from './Middleware';
+import { Chat } from './Chat';
 import Payload from './utils/Payload';
-import Conversation from './Conversation';
+import { Conversation } from './Conversation';
 import getPatternMatcher from './utils/MatchPattern';
 /**
  * Option for listen message
  * @alias ListenOptions
  * @type {Object}
  */
-interface ListenOptions {
+export interface ListenOptions {
 	/**
 	 * The desired logging level as determined by npmlog.
 	 * Choose from either "silly", "verbose", "info", "http", "warn",
@@ -57,7 +57,7 @@ interface ListenOptions {
 /**
  * Option of bot
  */
-interface BotOptions {
+export interface BotOptions {
 	/**
 	 * The email of bot account
 	 */
@@ -76,19 +76,13 @@ interface BotOptions {
 	 */
 	listenOptions?: ListenOptions;
 }
-interface BotEvent extends DefaultEventMap {
+export interface BotEvent extends DefaultEventMap {
 	message: Callback;
 	event: Callback;
 	message_reaction: Callback;
 	info: (message: InfoMessage) => void;
 }
-
-// declare interface Bot {
-// 	on<U extends keyof BotEvent>(event: U, listener: BotEvent[U]): this;
-
-// 	emit<U extends keyof BotEvent>(event: U, ...args: Parameters<BotEvent[U]>): boolean;
-// }
-class Bot extends EventEmitter<BotEvent> {
+export class Bot extends EventEmitter<BotEvent> {
 	private _options: BotOptions;
 	private _isLogin: Boolean = false;
 	private _conversations: {
@@ -327,5 +321,3 @@ class Bot extends EventEmitter<BotEvent> {
 		return instance instanceof Bot;
 	}
 }
-
-export default Bot;

@@ -1,17 +1,13 @@
-import Bot from './Bot';
+import { Bot } from './Bot';
 import Payload from './utils/Payload';
 import MessageObject from './utils/MessageObject';
-import Conversation from './Conversation';
+import { Conversation } from './Conversation';
 import { EventEmitter, DefaultEventMap } from 'tsee';
-/**
- *
- */
-
-interface ConversationEvent extends DefaultEventMap {
+export interface ConversationEvent extends DefaultEventMap {
 	end: (convo: Conversation) => void;
 	start: (convo: Conversation) => void;
 }
-class Chat extends EventEmitter<ConversationEvent> {
+export class Chat extends EventEmitter<ConversationEvent> {
 	bot: Bot;
 	payload: Payload;
 	/**
@@ -57,5 +53,3 @@ class Chat extends EventEmitter<ConversationEvent> {
 		return this.bot.conversation(this.payload, factory);
 	}
 }
-
-export default Chat;

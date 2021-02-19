@@ -8,6 +8,7 @@ class InfoMessage {
 	/**
 	 * @param  {String} message - Message to show
 	 * @param  {String} [group=SYSTEM] - Group log (custom)
+	 * @constructor
 	 */
 	constructor(message: String, group = 'SYSTEM') {
 		this.message = message;

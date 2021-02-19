@@ -1,12 +1,12 @@
-import Bot from './Bot';
-import Chat from './Chat';
+import { Bot } from './Bot';
+import { Chat } from './Chat';
 import Payload, { PayloadType } from './utils/Payload';
 // import MessageObject from './utils/MessageObject';
 type Question = String | Function;
 export interface AnswerCallback {
 	(payload: Payload, convo: Conversation, chat?: Chat): void;
 }
-class Conversation extends Chat {
+export class Conversation extends Chat {
 	private waitingForAnswer: Boolean;
 	private listeningAnswer: AnswerCallback;
 	private listeningAnswerType: PayloadType[];
@@ -91,4 +91,3 @@ class Conversation extends Chat {
 		this.context[property] = value;
 	}
 }
-export default Conversation;

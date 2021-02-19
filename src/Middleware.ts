@@ -1,6 +1,6 @@
 import * as EventEmitter from 'eventemitter3';
 import Payload, { PayloadType } from './utils/Payload';
-import Chat from './Chat';
+import { Chat } from './Chat';
 /**
  * Callback
  */
@@ -14,7 +14,7 @@ export interface Callback {
  * Middleware
  *
  */
-class Middleware {
+export class Middleware {
 	private _executor: Callback;
 	private _next: Middleware;
 	type: PayloadType;
@@ -43,4 +43,3 @@ class Middleware {
 		return instance instanceof Middleware;
 	}
 }
-export default Middleware;
