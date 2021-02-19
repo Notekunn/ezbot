@@ -30,7 +30,7 @@ class Chat extends EventEmitter {
 	}
 	reply(message: MessageObject | String, callback?: Function): void {
 		if (!this.payload.messageID) throw new Error('Cannot reply this event');
-		this.bot.sendMessage(message, this.payload.threadID, callback);
+		this.bot.sendMessage(message, this.payload.threadID, callback, this.payload.messageID);
 	}
 	sendTypingIndicator() {
 		return this.bot.sendTypingIndicator(this.payload.threadID);

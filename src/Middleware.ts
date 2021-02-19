@@ -4,7 +4,12 @@ import Chat from './Chat';
 /**
  * Callback
  */
-export type Callback = (payload: Payload, chat: Chat, context: any, next: Function) => void;
+interface NextFunction {
+	(context?: Object): void;
+}
+export interface Callback {
+	(payload: Payload, chat: Chat, context: Object, next: NextFunction): void;
+}
 /**
  * Middleware
  *
@@ -18,19 +23,20 @@ class Middleware {
 	 * @param  {Callback} executor
 	 * @param  {Middleware} next
 	 */
-	constructor(type: PayloadType, executor: Callback, next?: Middleware) {
+	constructor(type: PayloadType, executor: Callback) {
 		this.type = type;
 		this._executor = executor;
-		this._next = next;
 	}
 	setNext(next: Middleware): void {
 		this._next = next;
 	}
-	execute(payload: Payload, chat: Chat, context: any): void {
+	execute(payload: Payload, chat: Chat, context: Object): void {
 		if (typeof this._executor !== 'function') throw new Error('executor must be a function');
-		this._executor(payload, chat, context, this.next);
+		this._executor(payload, chat, context, (newContext = context) =>
+			this.next(payload, chat, newContext)
+		);
 	}
-	private next(payload: Payload, chat: Chat, context: any): void {
+	private next(payload: Payload, chat: Chat, context: Object): void {
 		if (this._next) this._next.execute(payload, chat, context);
 	}
 	static isMiddleware(instance: any) {

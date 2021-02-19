@@ -6,6 +6,7 @@ import MessageObject from './utils/MessageObject';
 import Middleware, { Callback } from './Middleware';
 import Chat from './Chat';
 import Payload from './utils/Payload';
+import getPatternMatcher from './utils/MatchPattern';
 /**
  * Option for listen message
  * @alias ListenOptions
@@ -222,10 +223,22 @@ class Bot extends EventEmitter<BotEvent> {
 				lastMiddleware.setNext(middleware);
 			}
 			middlewares.push(middleware);
+			this.emit('info', new InfoMessage(`Active middleware: ${middleware.type}`, 'BUILD'));
 			return this;
 		}
 		//Use plugin
 		return this;
+	}
+	hear(patterns: RegExp | String | Array<RegExp | String>, callback: Callback) {
+		if (!Array.isArray(patterns)) patterns = [patterns];
+		const matchPattern = getPatternMatcher(patterns);
+		const middleware = new Middleware('message', (payload, chat, context, next) => {
+			const { matched, command, args } = matchPattern(payload.body);
+			if (!matched) return next();
+			const newContext = { ...context, matched, command, args };
+			return callback(payload, chat, newContext, next);
+		});
+		this.use(middleware);
 	}
 	getAppState(): Object {
 		return this.api.getAppState();
@@ -240,10 +253,11 @@ class Bot extends EventEmitter<BotEvent> {
 		messageID?: String
 	): void {
 		if (!callback) {
-			return this.api.sendMessage(message, threadID);
+			callback = () => {};
 		}
 		if (typeof callback === 'string') {
-			return this.api.sendMessage(message, threadID, () => {}, messageID);
+			messageID = callback;
+			callback = () => {};
 		}
 		return this.api.sendMessage(message, threadID, callback, messageID);
 	}
