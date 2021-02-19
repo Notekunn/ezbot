@@ -6,6 +6,7 @@ import MessageObject from './utils/MessageObject';
 import Middleware, { Callback } from './Middleware';
 import Chat from './Chat';
 import Payload from './utils/Payload';
+import Conversation from './Conversation';
 import getPatternMatcher from './utils/MatchPattern';
 /**
  * Option for listen message
@@ -90,6 +91,9 @@ interface BotEvent extends DefaultEventMap {
 class Bot extends EventEmitter<BotEvent> {
 	private _options: BotOptions;
 	private _isLogin: Boolean = false;
+	private _conversations: {
+		[key: string]: Conversation;
+	} = {};
 	private _messageMiddleware: Middleware[] = [];
 	private _eventMiddleware: Middleware[] = [];
 	private _defaultMiddleware: {
@@ -190,6 +194,7 @@ class Bot extends EventEmitter<BotEvent> {
 	}
 	private _getListener() {
 		const messageHandler = this._getMessageHandler();
+		const conversationHandler = this._handleConversationResponse.bind(this);
 		return (error: any, payload: Payload): void => {
 			if (error) {
 				this.emit('error:listen', error);
@@ -197,11 +202,17 @@ class Bot extends EventEmitter<BotEvent> {
 			}
 			const chat = new Chat(this, payload);
 			const context = {};
+			if (
+				payload.type === 'message' ||
+				payload.type === 'event' ||
+				payload.type === 'message_reply' ||
+				payload.type === 'message_reaction'
+			)
+				if (conversationHandler(payload)) return;
 			switch (payload.type) {
 				case 'message':
 					messageHandler.execute(payload, chat, context);
 					break;
-
 				default:
 					break;
 			}
@@ -211,6 +222,23 @@ class Bot extends EventEmitter<BotEvent> {
 		const first = this._messageMiddleware[0];
 		if (!first) return this._defaultMiddleware.message;
 		return first;
+	}
+	private _getConversationKey(payload: Payload): string {
+		const conversationKey = payload.threadID + '_';
+		if (
+			payload.type === 'message' ||
+			payload.type === 'message_reaction' ||
+			payload.type === 'message_reply'
+		)
+			return conversationKey + payload.senderID;
+		if (payload.type === 'event') return conversationKey + payload.author;
+		return conversationKey;
+	}
+	private _handleConversationResponse(payload: Payload): Boolean | Conversation {
+		const conversationKey = this._getConversationKey(payload);
+		const convo = this._conversations[conversationKey];
+		if (!convo) return false;
+		return convo.response(payload);
 	}
 	use(middleware: Middleware): this {
 		//Use middleware
@@ -241,6 +269,23 @@ class Bot extends EventEmitter<BotEvent> {
 			return callback(payload, chat, newContext, next);
 		});
 		this.use(middleware);
+	}
+
+	conversation(payload: Payload, factory: (covo: Conversation) => void) {
+		if (!payload || !factory || typeof factory !== 'function') {
+			return console.error(
+				`You need to specify a payload and a callback to start a conversation`
+			);
+		}
+		const convo = new Conversation(this, payload);
+		const conversationKey = this._getConversationKey(payload);
+		if (this._conversations[conversationKey]) throw Error('One converstation is active');
+		this._conversations[conversationKey] = convo;
+		convo.on('end', (covo) => {
+			this._conversations[conversationKey] = null;
+		});
+		factory(convo);
+		return convo;
 	}
 	getAppState(): Object {
 		return this.api.getAppState();
