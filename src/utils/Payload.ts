@@ -4,13 +4,16 @@ interface Event {
 	type: PayloadType;
 	threadID: String;
 }
-interface Attachment {}
+interface Attachment {
+	type: 'photo' | 'video' | 'sticker' | 'animated_image' | 'audio' | 'share';
+	ID: String;
+}
 interface Mention {}
 export interface PayloadMessage extends Event {
-	attachments: Attachment[];
+	attachments: any[];
 	body: String;
 	isGroup: Boolean;
-	mentions: Mention[];
+	mentions: any[];
 	messageID: String;
 	senderID: String;
 	isUnread: Boolean;

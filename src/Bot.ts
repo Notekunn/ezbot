@@ -104,6 +104,7 @@ class Bot extends EventEmitter<BotEvent> {
 	 */
 	constructor(options: BotOptions) {
 		super();
+		if (!options || typeof options !== 'object') throw new Error('Need bot options to start!');
 		this._options = options;
 		this.on('start', () => {
 			this._isLogin = true;
@@ -138,9 +139,10 @@ class Bot extends EventEmitter<BotEvent> {
 	}
 	start(): void {
 		this.emit('start');
-		const { email, password, appStatePath, listenOptions } = this._options;
+		const { email, password, appStatePath, listenOptions = {} } = this._options;
 		const appState: Object = this._readAppState();
-		login(appState ? { appState } : { email, password }, (error: any, api: any) => {
+		const identy = appState ? { appState } : { email, password };
+		login(identy, listenOptions, (error: any, api: any) => {
 			if (error) return this.emit('error:login', error);
 			this.api = api;
 			this._writeAppState();
