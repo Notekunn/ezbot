@@ -2,12 +2,12 @@ import { EventEmitter, DefaultEventMap } from 'tsee';
 import * as login from 'facebook-chat-api';
 import * as fs from 'fs';
 import InfoMessage from './utils/InfoMessage';
-import MessageObject from './utils/MessageObject';
+import MessageObject from './types/MessageObject';
 import Middleware, { Callback } from './Middleware';
 import Chat from './Chat';
-import { Payload } from './utils/Payload';
+import { Payload, PayloadType } from './types/Payload';
 import Conversation from './Conversation';
-import getPatternMatcher from './utils/MatchPattern';
+import getPatternMatcher from './types/MatchPattern';
 /**
  * Option for listen message
  * @alias ListenOptionsMiddleware
@@ -78,6 +78,7 @@ export interface BotOptions {
 }
 export interface BotEvent extends DefaultEventMap {
 	message: Callback;
+	message_reply: Callback;
 	event: Callback;
 	message_reaction: Callback;
 	info: (message: InfoMessage) => void;
@@ -99,7 +100,7 @@ export default class Bot extends EventEmitter<BotEvent> {
 	private _messageMiddleware: Middleware[] = [];
 	private _eventMiddleware: Middleware[] = [];
 	private _defaultMiddleware: {
-		[key in 'message' | 'event' | 'message_reaction']: Middleware;
+		[key in PayloadType]: Middleware;
 	};
 	private api: any;
 
@@ -182,7 +183,7 @@ export default class Bot extends EventEmitter<BotEvent> {
 			this.emit('error', error, payload, chat, context);
 		});
 		const messageMiddleware = new Middleware('message', (payload, chat, context) => {
-			this.emit('message', payload, chat, context, () => {});
+			this.emit(payload.type, payload, chat, context, () => {});
 		});
 		const eventMiddleware = new Middleware('event', (payload, chat, context) => {
 			this.emit('event', payload, chat, context, () => {});
@@ -223,6 +224,7 @@ export default class Bot extends EventEmitter<BotEvent> {
 	}
 	private _getListener() {
 		const messageHandler = this._getMessageHandler();
+		const eventHandler = this._getEventHandler();
 		const conversationHandler = this._handleConversationResponse.bind(this);
 		return (error: any, payload: Payload) => {
 			if (error) return this.emit('error:listen', error);
@@ -236,7 +238,7 @@ export default class Bot extends EventEmitter<BotEvent> {
 					messageHandler.execute(payload, chat, context);
 					break;
 				case 'event':
-					console.log(payload);
+					eventHandler.execute(payload, chat, context);
 				default:
 					break;
 			}
@@ -244,7 +246,10 @@ export default class Bot extends EventEmitter<BotEvent> {
 	}
 	private _getMessageHandler(): Middleware {
 		const first = this._messageMiddleware[0];
-		if (!first) return this._defaultMiddleware.message;
+		return first;
+	}
+	private _getEventHandler(): Middleware {
+		const first = this._eventMiddleware[0];
 		return first;
 	}
 	private _getConversationKey(payload: Payload): string {

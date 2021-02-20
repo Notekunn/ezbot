@@ -12,6 +12,9 @@ const bot = new Bot({
 bot.on('message', (payload, chat) => {
 	console.log(payload);
 });
+bot.on('event', (payload) => {
+	console.log(payload);
+});
 bot.on('info', (message) => {
 	message.log();
 });

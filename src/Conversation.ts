@@ -1,6 +1,6 @@
 import Bot from './Bot';
 import Chat from './Chat';
-import { PayloadType, Payload, PayloadMessage, PayloadMessageReply } from './utils/Payload';
+import { PayloadType, Payload, PayloadMessage, PayloadMessageReply } from './types/Payload';
 // import MessageObject from './utils/MessageObject';
 type Question = String | Function;
 export interface AnswerCallback {

@@ -1,4 +1,4 @@
-import { PayloadType, Payload } from './utils/Payload';
+import { PayloadType, Payload } from './types/Payload';
 import Chat from './Chat';
 /**
  * Callback

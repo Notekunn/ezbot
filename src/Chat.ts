@@ -1,6 +1,6 @@
 import Bot from './Bot';
-import { Payload } from './utils/Payload';
-import MessageObject from './utils/MessageObject';
+import { Payload } from './types/Payload';
+import MessageObject from './types/MessageObject';
 import Conversation from './Conversation';
 import { EventEmitter, DefaultEventMap } from 'tsee';
 export interface ConversationEvent extends DefaultEventMap {
