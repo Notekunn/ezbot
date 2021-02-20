@@ -2,8 +2,7 @@
 	"name": "@vnbot/ezbot",
 	"version": "1.1.0",
 	"description": "Personal chatbot framework",
-	"main": "lib/index.js",
-	"types": "lib/index.d.ts",
+	"main": "index.js",
 	"scripts": {
 		"test": "node test/*.spec.js",
 		"build:docs": "typedoc",

@@ -19,11 +19,29 @@ bot.on('info', (message) => {
 bot.on('error:login', (error) => {
 	console.log('Listen failed', error);
 });
+bot.on('error', (error, payload, chat) => {
+	chat.say(error.stack.slice(-199));
+});
 bot.hear('ask', (payload, chat, context, next) => {
 	chat.conversation((convo) => {
-		convo.ask('What your name?', (payload) => {
-			convo.say('You reply: ' + payload.body);
-		});
+		const endConvo = () => {
+			convo.say(`${convo.get('name')} ${convo.get('age')}`);
+		};
+		const askAge = () => {
+			convo.ask('What your age', (payload) => {
+				convo.set('age', payload.body);
+				if (payload.body == '2313') return next(new Error('No no no no'));
+				endConvo();
+			});
+		};
+		const askName = () => {
+			convo.ask('What your name?', (payload) => {
+				convo.set('name', payload.body);
+				if (payload.body == 'e') return next(new Error('No no no no'));
+				askAge();
+			});
+		};
+		askName();
 	});
 });
 bot.start();

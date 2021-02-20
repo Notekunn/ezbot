@@ -1,12 +1,12 @@
-import { Bot } from './Bot';
-import { Chat } from './Chat';
+import Bot from './Bot';
+import Chat from './Chat';
 import Payload, { PayloadType } from './utils/Payload';
 // import MessageObject from './utils/MessageObject';
 type Question = String | Function;
 export interface AnswerCallback {
 	(payload: Payload, convo: Conversation, chat?: Chat): void;
 }
-export class Conversation extends Chat {
+export default class Conversation extends Chat {
 	private waitingForAnswer: Boolean;
 	private listeningAnswer: AnswerCallback;
 	private listeningAnswerType: PayloadType[];
@@ -65,12 +65,12 @@ export class Conversation extends Chat {
 			return false;
 		}
 		if (this.listeningAnswer && typeof this.listeningAnswer === 'function') {
-			// this.stopWaitingForAnswer();
 			const listeningAnswer = this.listeningAnswer;
-			this.listeningAnswer = null;
+			this.stopWaitingForAnswer();
 			listeningAnswer(payload, this /* new Chat(this.bot, payload) */);
-			return this;
+			if (this.isWaitingForAnswer()) return this;
 		}
+
 		// End if not
 		return this.end();
 	}
@@ -85,7 +85,7 @@ export class Conversation extends Chat {
 		return this.active;
 	}
 	get(property: string): any {
-		this.context[property];
+		return this.context[property];
 	}
 	set(property: string, value: any): void {
 		this.context[property] = value;

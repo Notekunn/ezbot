@@ -1,20 +1,20 @@
 import * as EventEmitter from 'eventemitter3';
 import Payload, { PayloadType } from './utils/Payload';
-import { Chat } from './Chat';
+import Chat from './Chat';
 /**
  * Callback
  */
 interface NextFunction {
-	(context?: Object): void;
+	(context?: Object | Error): void;
 }
 export interface Callback {
-	(payload: Payload, chat: Chat, context: Object, next: NextFunction): void;
+	(payload: Payload, chat: Chat, context: Object, next: NextFunction, error?: Error): void;
 }
 /**
  * Middleware
  *
  */
-export class Middleware {
+export default class Middleware {
 	private _executor: Callback;
 	private _next: Middleware;
 	type: PayloadType;
@@ -26,18 +26,33 @@ export class Middleware {
 	constructor(type: PayloadType, executor: Callback) {
 		this.type = type;
 		this._executor = executor;
+		this._next = null;
 	}
 	setNext(next: Middleware): void {
 		this._next = next;
 	}
-	execute(payload: Payload, chat: Chat, context: Object): void {
-		if (typeof this._executor !== 'function') throw new Error('executor must be a function');
-		this._executor(payload, chat, context, (newContext = context) =>
-			this.next(payload, chat, newContext)
-		);
+	setExecutor(executor: Callback) {
+		this._executor = executor;
 	}
-	private next(payload: Payload, chat: Chat, context: Object): void {
-		if (this._next) this._next.execute(payload, chat, context);
+	execute(payload: Payload, chat: Chat, context: Object, error?: Error): void {
+		if (typeof this._executor !== 'function') throw new Error('executor must be a function');
+		if (typeof context !== 'object') throw new Error('Context must be an object');
+
+		if (this.isLast()) {
+			// Neu la middleware cuoi cung - Error handler
+			this._executor(payload, chat, context, () => {}, error);
+		} else if (error instanceof Error) {
+			//Neu co error this pass next de xu ly
+			this._next.execute(payload, chat, context, error);
+		} else {
+			//Neu khong co loi xay ra
+			//Truyen vo ham next - (ham executor tiep theo)
+			const next = (err: Error) => this._next.execute(payload, chat, context, err);
+			this._executor(payload, chat, context, next);
+		}
+	}
+	isLast(): boolean {
+		return this._next == null;
 	}
 	static isMiddleware(instance: any) {
 		return instance instanceof Middleware;

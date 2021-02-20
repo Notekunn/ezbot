@@ -1,13 +1,13 @@
-import { Bot } from './Bot';
+import Bot from './Bot';
 import Payload from './utils/Payload';
 import MessageObject from './utils/MessageObject';
-import { Conversation } from './Conversation';
+import Conversation from './Conversation';
 import { EventEmitter, DefaultEventMap } from 'tsee';
 export interface ConversationEvent extends DefaultEventMap {
 	end: (convo: Conversation) => void;
 	start: (convo: Conversation) => void;
 }
-export class Chat extends EventEmitter<ConversationEvent> {
+export default class Chat extends EventEmitter<ConversationEvent> {
 	bot: Bot;
 	payload: Payload;
 	/**

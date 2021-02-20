@@ -3,15 +3,15 @@ import * as login from 'facebook-chat-api';
 import * as fs from 'fs';
 import InfoMessage from './utils/InfoMessage';
 import MessageObject from './utils/MessageObject';
-import { Callback, Middleware } from './Middleware';
-import { Chat } from './Chat';
+import Middleware, { Callback } from './Middleware';
+import Chat from './Chat';
 import Payload from './utils/Payload';
-import { Conversation } from './Conversation';
+import Conversation from './Conversation';
 import getPatternMatcher from './utils/MatchPattern';
 /**
  * Option for listen message
- * @alias ListenOptions
- * @type {Object}
+ * @alias ListenOptionsMiddleware
+ * @type {Object}MiddlewareMiddleware
  */
 export interface ListenOptions {
 	/**
@@ -81,8 +81,9 @@ export interface BotEvent extends DefaultEventMap {
 	event: Callback;
 	message_reaction: Callback;
 	info: (message: InfoMessage) => void;
+	error: (error: Error, payload: Payload, chat: Chat, context: Object) => void;
 }
-export class Bot extends EventEmitter<BotEvent> {
+export default class Bot extends EventEmitter<BotEvent> {
 	private _options: BotOptions;
 	private _isLogin: Boolean = false;
 	private _conversations: {
@@ -114,12 +115,6 @@ export class Bot extends EventEmitter<BotEvent> {
 			this._clean();
 			this.stop();
 		});
-		this._defaultMiddleware.message = new Middleware('message', (payload, chat, context) => {
-			this.emit('message', payload, chat, context, () => {});
-		});
-		this._defaultMiddleware.event = new Middleware('event', (payload, chat, context) => {
-			this.emit('event', payload, chat, context, () => {});
-		});
 	}
 
 	/**
@@ -136,10 +131,12 @@ export class Bot extends EventEmitter<BotEvent> {
 		return this._options;
 	}
 	start(): void {
+		if (this._isLogin) return;
 		this.emit('start');
 		const { email, password, appStatePath, listenOptions = {} } = this._options;
 		const appState: Object = this._readAppState();
 		const identy = appState ? { appState } : { email, password };
+		this.setup();
 		login(identy, listenOptions, (error: any, api: any) => {
 			if (error) return this.emit('error:login', error);
 			this.api = api;
@@ -156,6 +153,24 @@ export class Bot extends EventEmitter<BotEvent> {
 		if (!this.api) return;
 		const listener = this._getListener();
 		this.api.listenMqtt(listener);
+	}
+	/**
+	 * Setups bot
+	 */
+	private setup(): void {
+		const errorHandler = new Middleware('event', (payload, chat, context, next, error) => {
+			this.emit('error', error, payload, chat, context);
+		});
+		const messageMiddleware = new Middleware('message', (payload, chat, context) => {
+			this.emit('message', payload, chat, context, () => {});
+		});
+		const eventMiddleware = new Middleware('event', (payload, chat, context) => {
+			this.emit('event', payload, chat, context, () => {});
+		});
+		messageMiddleware.setNext(errorHandler);
+		eventMiddleware.setNext(errorHandler);
+		this.useMiddleWare(this._messageMiddleware, messageMiddleware);
+		this.useMiddleWare(this._eventMiddleware, eventMiddleware);
 	}
 	private _writeAppState(): void {
 		if (!this._isLogin) return;
@@ -189,20 +204,12 @@ export class Bot extends EventEmitter<BotEvent> {
 	private _getListener() {
 		const messageHandler = this._getMessageHandler();
 		const conversationHandler = this._handleConversationResponse.bind(this);
-		return (error: any, payload: Payload): void => {
-			if (error) {
-				this.emit('error:listen', error);
-				return;
-			}
+		return (error: any, payload: Payload) => {
+			if (error) return this.emit('error:listen', error);
+
 			const chat = new Chat(this, payload);
 			const context = {};
-			if (
-				payload.type === 'message' ||
-				payload.type === 'event' ||
-				payload.type === 'message_reply' ||
-				payload.type === 'message_reaction'
-			)
-				if (conversationHandler(payload)) return;
+			if (conversationHandler(payload)) return;
 			switch (payload.type) {
 				case 'message':
 					messageHandler.execute(payload, chat, context);
@@ -229,29 +236,38 @@ export class Bot extends EventEmitter<BotEvent> {
 		return conversationKey;
 	}
 	private _handleConversationResponse(payload: Payload): Boolean | Conversation {
+		if (
+			payload.type !== 'message' &&
+			payload.type !== 'event' &&
+			payload.type !== 'message_reply' &&
+			payload.type !== 'message_reaction'
+		)
+			return false;
 		const conversationKey = this._getConversationKey(payload);
 		const convo = this._conversations[conversationKey];
-		if (!convo) return false;
+		if (!convo || !convo.isActive()) return false;
 		return convo.response(payload);
 	}
 	use(middleware: Middleware): this {
 		//Use middleware
 		if (Middleware.isMiddleware(middleware)) {
-			let middlewares: Middleware[];
-			middleware.setNext(this._defaultMiddleware[middleware.type]);
-			if (middleware.type === 'message') middlewares = this._messageMiddleware;
-			else if (middleware.type === 'event') middlewares = this._eventMiddleware;
+			if (middleware.type === 'message')
+				this.useMiddleWare(this._messageMiddleware, middleware);
+			else if (middleware.type === 'event')
+				this.useMiddleWare(this._eventMiddleware, middleware);
 			else throw new Error('This middleware type is not supported');
-			const lastMiddleware = middlewares[middlewares.length - 1];
-			if (lastMiddleware) {
-				lastMiddleware.setNext(middleware);
-			}
-			middlewares.push(middleware);
 			this.emit('info', new InfoMessage(`Active middleware: ${middleware.type}`, 'BUILD'));
 			return this;
 		}
 		//Use plugin
 		return this;
+	}
+	private useMiddleWare(middlewares: Middleware[], middleware: Middleware): void {
+		const lastMiddleware = middlewares[middlewares.length - 1];
+		if (lastMiddleware) {
+			lastMiddleware.setNext(middleware);
+		}
+		middlewares.push(middleware);
 	}
 	hear(patterns: RegExp | String | Array<RegExp | String>, callback: Callback) {
 		if (!Array.isArray(patterns)) patterns = [patterns];
@@ -272,12 +288,14 @@ export class Bot extends EventEmitter<BotEvent> {
 			);
 		}
 		const convo = new Conversation(this, payload);
-		const conversationKey = this._getConversationKey(payload);
-		if (this._conversations[conversationKey]) throw Error('One converstation is active');
-		this._conversations[conversationKey] = convo;
 		convo.on('end', (covo) => {
 			this._conversations[conversationKey] = null;
 		});
+		const conversationKey = this._getConversationKey(payload);
+		// if (this._conversations[conversationKey] != null)
+		// 	throw Error('One converstation is active');
+		this._conversations[conversationKey] = convo;
+
 		factory(convo);
 		return convo;
 	}
