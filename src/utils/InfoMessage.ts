@@ -1,3 +1,4 @@
+import * as chalk from 'chalk';
 /**
  * Log message wrapper with date
  */
@@ -19,7 +20,11 @@ class InfoMessage {
 	 * Show message
 	 */
 	log(): void {
-		console.log(this.group, this.createdAt.toLocaleString(), this.message);
+		console.log(
+			chalk.green(this.group),
+			chalk.magenta(this.createdAt.toLocaleString()),
+			this.message
+		);
 	}
 }
 export default InfoMessage;

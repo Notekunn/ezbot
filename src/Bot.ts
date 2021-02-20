@@ -130,10 +130,22 @@ export default class Bot extends EventEmitter<BotEvent> {
 	getOptions(): BotOptions {
 		return this._options;
 	}
-	start(): void {
+	private setListenOptions(options: ListenOptions) {
+		if (options) {
+			this._options = {
+				...this._options,
+				listenOptions: {
+					...this._options.listenOptions,
+					...options,
+				},
+			};
+		}
+	}
+	start(options?: ListenOptions): void {
 		if (this._isLogin) return;
 		this.emit('start');
-		const { email, password, appStatePath, listenOptions = {} } = this._options;
+		this.setListenOptions(options);
+		const { email, password, listenOptions = {} } = this._options;
 		const appState: Object = this._readAppState();
 		const identy = appState ? { appState } : { email, password };
 		this.setup();
@@ -141,6 +153,7 @@ export default class Bot extends EventEmitter<BotEvent> {
 			if (error) return this.emit('error:login', error);
 			this.api = api;
 			this._writeAppState();
+			this.emit('info', new InfoMessage('Login successfully'));
 			this.listen();
 		});
 	}
@@ -151,6 +164,7 @@ export default class Bot extends EventEmitter<BotEvent> {
 
 	listen(): void {
 		if (!this.api) return;
+		this.emit('info', new InfoMessage('Start listen'));
 		const listener = this._getListener();
 		this.api.listenMqtt(listener);
 	}

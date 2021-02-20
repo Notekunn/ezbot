@@ -9,7 +9,6 @@ const bot = new Bot({
 		logLevel: 'info',
 	},
 });
-
 bot.on('message', (payload, chat) => {
 	console.log(payload);
 });
@@ -44,4 +43,5 @@ bot.hear('ask', (payload, chat, context, next) => {
 		askName();
 	});
 });
+
 bot.start();

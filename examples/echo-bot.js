@@ -6,9 +6,9 @@ const bot = new Bot({
 	password: config.get('password'),
 	appStatePath: path.resolve(__dirname, '../appstate.json'),
 	listenOptions: {
-		userAgent:
-			'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36' +
-			' (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36',
+		// userAgent:
+		// 	'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36' +
+		// 	' (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36',
 		logLevel: 'error',
 	},
 });
