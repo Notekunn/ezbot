@@ -1,26 +1,26 @@
-export type PayloadType = 'message' | 'event' | 'message_reaction' | 'message_reply';
-
-interface Event {
+import { Attachment } from './Attachment';
+interface PayloadTemplate {
 	type: PayloadType;
-	threadID: String;
+	threadID: string;
 }
-interface Attachment {
-	type: 'photo' | 'video' | 'sticker' | 'animated_image' | 'audio' | 'share';
-	ID: String;
+
+type Mention = {
+	[key: string]: string;
+};
+export interface PayloadMessage extends PayloadTemplate {
+	type: 'message';
+	attachments?: Attachment[];
+	body: string;
+	isGroup: boolean;
+	mentions: Mention;
+	messageID: string;
+	senderID: string;
+	isUnread: boolean;
 }
-interface Mention {}
-export interface PayloadMessage extends Event {
-	attachments: any[];
-	body: String;
-	isGroup: Boolean;
-	mentions: any[];
-	messageID: String;
-	senderID: String;
-	isUnread: Boolean;
-}
-export interface PayloadEvent extends Event {
-	author: String;
-	logMessageBody: String;
+export interface PayloadEvent extends PayloadTemplate {
+	type: 'event';
+	author: string;
+	logMessageBody: string;
 	logMessageData: Object;
 	logMessageType:
 		| 'log:subscribe'
@@ -30,21 +30,44 @@ export interface PayloadEvent extends Event {
 		| 'log:thread-icon'
 		| 'log:user-nickname';
 }
-export interface PayloadMessageReaction extends Event {
-	/**
-	 * Adu
-	 */
-	messageID: String;
-	offlineThreadingID: String;
-	reaction: String;
-	senderID: String;
+export interface PayloadMessageReaction extends PayloadTemplate {
+	type: 'message_reaction';
+	messageID: string;
+	offlineThreadingID: string;
+	reaction: string;
+	senderID: string;
 	timestamp: any;
-	userID: String;
+	userID: string;
 }
+export interface PayloadMessageReply extends PayloadTemplate {
+	type: 'message_reply';
+	attachments: Attachment[];
+	body: string;
+	isGroup: boolean;
+	mentions: Mention;
+	messageID: string;
+	senderID: string;
+	isUnread: boolean;
+	messageReply: PayloadMessage;
+}
+export interface PayloadMessageUnsend extends PayloadTemplate {
+	type: 'message_unsend';
+	senderID: string;
+	messageID: string;
+	deletionTimestamp: any;
+}
+
 /**
  * Payload for event
  */
-interface Payload extends PayloadMessage, PayloadEvent, PayloadMessageReaction {}
-// type Payload = PayloadMessage & PayloadEvent & PayloadMessageReaction;
+export type Payload =
+	| PayloadMessage
+	| PayloadEvent
+	| PayloadMessageReaction
+	| PayloadMessageReply
+	| PayloadMessageUnsend;
 
-export default Payload;
+export type PayloadType = Payload['type'];
+export type PayloadByType<E extends Payload['type'], T = Payload> = T extends { type: E }
+	? T
+	: never;

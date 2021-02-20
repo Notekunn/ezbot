@@ -1,16 +1,16 @@
 import Bot from './Bot';
 import Chat from './Chat';
-import Payload, { PayloadType } from './utils/Payload';
+import { PayloadType, Payload, PayloadMessage, PayloadMessageReply } from './utils/Payload';
 // import MessageObject from './utils/MessageObject';
 type Question = String | Function;
 export interface AnswerCallback {
 	(payload: Payload, convo: Conversation, chat?: Chat): void;
 }
 export default class Conversation extends Chat {
-	private waitingForAnswer: Boolean;
+	private waitingForAnswer: boolean;
 	private listeningAnswer: AnswerCallback;
 	private listeningAnswerType: PayloadType[];
-	private active: Boolean;
+	private active: boolean;
 	private context: {
 		[key: string]: any;
 	};
@@ -55,7 +55,7 @@ export default class Conversation extends Chat {
 		}
 		return this;
 	}
-	response(payload: Payload): Conversation | Boolean {
+	response(payload: PayloadMessage | PayloadMessageReply): Conversation | boolean {
 		//Skip if no question asked
 		if (!this.isWaitingForAnswer()) {
 			return false;
@@ -74,14 +74,14 @@ export default class Conversation extends Chat {
 		// End if not
 		return this.end();
 	}
-	isWaitingForAnswer(): Boolean {
+	isWaitingForAnswer(): boolean {
 		return this.waitingForAnswer;
 	}
 	stopWaitingForAnswer(): void {
 		this.waitingForAnswer = false;
 		this.listeningAnswer = null;
 	}
-	isActive(): Boolean {
+	isActive(): boolean {
 		return this.active;
 	}
 	get(property: string): any {

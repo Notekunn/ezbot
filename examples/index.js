@@ -44,4 +44,6 @@ bot.hear('ask', (payload, chat, context, next) => {
 	});
 });
 
-bot.start();
+bot.start({
+	listenEvents: true,
+});

@@ -1,5 +1,4 @@
-import * as EventEmitter from 'eventemitter3';
-import Payload, { PayloadType } from './utils/Payload';
+import { PayloadType, Payload } from './utils/Payload';
 import Chat from './Chat';
 /**
  * Callback
@@ -37,7 +36,6 @@ export default class Middleware {
 	execute(payload: Payload, chat: Chat, context: Object, error?: Error): void {
 		if (typeof this._executor !== 'function') throw new Error('executor must be a function');
 		if (typeof context !== 'object') throw new Error('Context must be an object');
-
 		if (this.isLast()) {
 			// Neu la middleware cuoi cung - Error handler
 			this._executor(payload, chat, context, () => {}, error);

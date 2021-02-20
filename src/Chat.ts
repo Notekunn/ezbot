@@ -1,5 +1,5 @@
 import Bot from './Bot';
-import Payload from './utils/Payload';
+import { Payload } from './utils/Payload';
 import MessageObject from './utils/MessageObject';
 import Conversation from './Conversation';
 import { EventEmitter, DefaultEventMap } from 'tsee';
@@ -27,12 +27,27 @@ export default class Chat extends EventEmitter<ConversationEvent> {
 		this.bot.sendMessage(message, this.payload.threadID, callback);
 	}
 	inbox(message: MessageObject | String, callback?: Function): void {
-		if (!this.payload.senderID) throw new Error('Cannot inbox with this event');
-		this.bot.sendMessage(message, this.payload.senderID, callback);
+		if (
+			this.payload.type === 'message' ||
+			this.payload.type === 'message_reaction' ||
+			this.payload.type === 'message_reply'
+		)
+			return this.bot.sendMessage(message, this.payload.senderID, callback);
+		throw new Error('Cannot inbox with this event');
 	}
 	reply(message: MessageObject | String, callback?: Function): void {
-		if (!this.payload.messageID) throw new Error('Cannot reply this event');
-		this.bot.sendMessage(message, this.payload.threadID, callback, this.payload.messageID);
+		if (
+			this.payload.type == 'message' ||
+			this.payload.type == 'message_reply' ||
+			this.payload.type == 'message_reaction'
+		)
+			return this.bot.sendMessage(
+				message,
+				this.payload.threadID,
+				callback,
+				this.payload.messageID
+			);
+		throw new Error('Cannot reply this event');
 	}
 	sendTypingIndicator() {
 		return this.bot.sendTypingIndicator(this.payload.threadID);
@@ -47,7 +62,12 @@ export default class Chat extends EventEmitter<ConversationEvent> {
 		return this.bot.muteThread(this.payload.threadID, muteSeconds);
 	}
 	setMessageReaction(reaction: String) {
-		return this.bot.setMessageReaction(reaction, this.payload.messageID);
+		if (
+			this.payload.type == 'message' ||
+			this.payload.type == 'message_reply' ||
+			this.payload.type == 'message_reaction'
+		)
+			return this.bot.setMessageReaction(reaction, this.payload.messageID);
 	}
 	conversation(factory: (covo: Conversation) => void) {
 		return this.bot.conversation(this.payload, factory);

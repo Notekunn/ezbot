@@ -5,7 +5,7 @@ import InfoMessage from './utils/InfoMessage';
 import MessageObject from './utils/MessageObject';
 import Middleware, { Callback } from './Middleware';
 import Chat from './Chat';
-import Payload from './utils/Payload';
+import { Payload } from './utils/Payload';
 import Conversation from './Conversation';
 import getPatternMatcher from './utils/MatchPattern';
 /**
@@ -27,22 +27,22 @@ export interface ListenOptions {
 	 * (a simple echo bot will send messages forever).
 	 * @default false
 	 */
-	selfListen?: Boolean;
+	selfListen?: boolean;
 	/**
 	 * Will make api.listen also handle events
 	 * @default false
 	 */
-	listenEvents?: Boolean;
+	listenEvents?: boolean;
 	pageID?: String;
 	/**
 	 * Will make listener also return presence
 	 */
-	updatePresence?: Boolean;
+	updatePresence?: boolean;
 	/**
 	 * Will automatically approve of any recent logins
 	 * and continue with the login proces
 	 */
-	forceLogin?: Boolean;
+	forceLogin?: boolean;
 	/**
 	 * The desired simulated User Agent.
 	 * @example (Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/600.3.18 (KHTML, like Gecko) Version/8.0.3 Safari/600.3.18)
@@ -51,8 +51,8 @@ export interface ListenOptions {
 	/**
 	 * Will automatically mark new messages as delivered.
 	 */
-	autoMarkDelivery?: Boolean;
-	autoMarkRead?: Boolean;
+	autoMarkDelivery?: boolean;
+	autoMarkRead?: boolean;
 }
 /**
  * Option of bot
@@ -84,17 +84,23 @@ export interface BotEvent extends DefaultEventMap {
 	error: (error: Error, payload: Payload, chat: Chat, context: Object) => void;
 }
 export default class Bot extends EventEmitter<BotEvent> {
-	private _options: BotOptions;
-	private _isLogin: Boolean = false;
+	private _options: BotOptions = {
+		email: '',
+		password: '',
+		appStatePath: '',
+		listenOptions: {
+			listenEvents: true,
+		},
+	};
+	private _isLogin: boolean = false;
 	private _conversations: {
 		[key: string]: Conversation;
 	} = {};
 	private _messageMiddleware: Middleware[] = [];
 	private _eventMiddleware: Middleware[] = [];
 	private _defaultMiddleware: {
-		message: Middleware;
-		event: Middleware;
-	} = { message: null, event: null };
+		[key in 'message' | 'event' | 'message_reaction']: Middleware;
+	};
 	private api: any;
 
 	/**
@@ -104,7 +110,7 @@ export default class Bot extends EventEmitter<BotEvent> {
 	constructor(options: BotOptions) {
 		super();
 		if (!options || typeof options !== 'object') throw new Error('Need bot options to start!');
-		this._options = options;
+		this.setOptions(options);
 		this.on('start', () => {
 			this._isLogin = true;
 		});
@@ -226,8 +232,11 @@ export default class Bot extends EventEmitter<BotEvent> {
 			if (conversationHandler(payload)) return;
 			switch (payload.type) {
 				case 'message':
+				case 'message_reply':
 					messageHandler.execute(payload, chat, context);
 					break;
+				case 'event':
+					console.log(payload);
 				default:
 					break;
 			}
@@ -249,14 +258,8 @@ export default class Bot extends EventEmitter<BotEvent> {
 		if (payload.type === 'event') return conversationKey + payload.author;
 		return conversationKey;
 	}
-	private _handleConversationResponse(payload: Payload): Boolean | Conversation {
-		if (
-			payload.type !== 'message' &&
-			payload.type !== 'event' &&
-			payload.type !== 'message_reply' &&
-			payload.type !== 'message_reaction'
-		)
-			return false;
+	private _handleConversationResponse(payload: Payload): boolean | Conversation {
+		if (payload.type !== 'message' && payload.type !== 'message_reply') return false;
 		const conversationKey = this._getConversationKey(payload);
 		const convo = this._conversations[conversationKey];
 		if (!convo || !convo.isActive()) return false;
@@ -287,6 +290,7 @@ export default class Bot extends EventEmitter<BotEvent> {
 		if (!Array.isArray(patterns)) patterns = [patterns];
 		const matchPattern = getPatternMatcher(patterns);
 		const middleware = new Middleware('message', (payload, chat, context, next) => {
+			if (payload.type !== 'message' && payload.type !== 'message_reply') return next();
 			const { matched, command, args } = matchPattern(payload.body);
 			if (!matched) return next();
 			const newContext = { ...context, matched, command, args };
@@ -302,12 +306,10 @@ export default class Bot extends EventEmitter<BotEvent> {
 			);
 		}
 		const convo = new Conversation(this, payload);
+		const conversationKey = this._getConversationKey(payload);
 		convo.on('end', (covo) => {
 			this._conversations[conversationKey] = null;
 		});
-		const conversationKey = this._getConversationKey(payload);
-		// if (this._conversations[conversationKey] != null)
-		// 	throw Error('One converstation is active');
 		this._conversations[conversationKey] = convo;
 
 		factory(convo);
