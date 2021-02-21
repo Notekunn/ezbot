@@ -127,6 +127,8 @@ export default class Bot extends EventEmitter<BotEvent> {
 		this.useMiddleWare(this._messageMiddleware, new CommandParser(this));
 		this.on('start', () => {
 			this._isLogin = true;
+			this.emit('info', new InfoMessage(`Prefix: ${this._options.prefix}`));
+			this.emit('info', new InfoMessage(`Name: ${this._options.name}`));
 		});
 		this.on('stop', () => {
 			this._isLogin = false;
