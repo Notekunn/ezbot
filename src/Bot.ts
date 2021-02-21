@@ -298,8 +298,10 @@ export default class Bot extends EventEmitter<BotEvent> {
 			if (payload.type !== 'message' && payload.type !== 'message_reply') return next();
 			const { matched, command, args } = matchPattern(payload.body);
 			if (!matched) return next();
-			const newContext = { ...context, matched, command, args };
-			return callback(payload, chat, newContext, next);
+			context.matched = matched;
+			context.command = command;
+			context.args = args;
+			return callback(payload, chat, context, next);
 		});
 		this.use(middleware);
 	}

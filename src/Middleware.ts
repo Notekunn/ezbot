@@ -6,8 +6,11 @@ import Chat from './Chat';
 interface NextFunction {
 	(context?: Object | Error): void;
 }
+interface ContextObject {
+	[key: string]: any;
+}
 export interface Callback {
-	(payload: Payload, chat: Chat, context: Object, next: NextFunction, error?: Error): void;
+	(payload: Payload, chat: Chat, context: ContextObject, next: NextFunction, error?: Error): void;
 }
 /**
  * Middleware
@@ -33,7 +36,7 @@ export default class Middleware {
 	setExecutor(executor: Callback) {
 		this._executor = executor;
 	}
-	execute(payload: Payload, chat: Chat, context: Object, error?: Error): void {
+	execute(payload: Payload, chat: Chat, context: ContextObject, error?: Error): void {
 		if (typeof this._executor !== 'function') throw new Error('executor must be a function');
 		if (typeof context !== 'object') throw new Error('Context must be an object');
 		if (this.isLast()) {
