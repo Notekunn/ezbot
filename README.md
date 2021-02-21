@@ -23,3 +23,10 @@ bot.on('message', (payload, chat) => {
 
 bot.start();
 ```
+
+More examples
+
+```bash
+cd examples
+node echo-bot
+```
