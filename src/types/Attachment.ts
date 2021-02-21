@@ -1,7 +1,7 @@
 type AttachmentTemplate<T extends string> = {
 	[key in T | 'ID']: string;
 };
-interface PhotoAttachment
+export interface PhotoAttachment
 	extends AttachmentTemplate<
 		| 'filename'
 		| 'thumbnailUrl'
@@ -14,11 +14,11 @@ interface PhotoAttachment
 	> {
 	type: 'photo';
 }
-interface FileAttachment
+export interface FileAttachment
 	extends AttachmentTemplate<'filename' | 'url' | 'isMalicious' | 'contentType'> {
 	type: 'file';
 }
-interface VideoAttachment
+export interface VideoAttachment
 	extends AttachmentTemplate<
 		| 'filename'
 		| 'previewUrl'

@@ -2,7 +2,7 @@ import Bot from './Bot';
 import Chat from './Chat';
 import { PayloadType, Payload, PayloadMessage, PayloadMessageReply } from './types/Payload';
 // import MessageObject from './utils/MessageObject';
-type Question = String | Function;
+type Question = string | Function;
 export interface AnswerCallback {
 	(payload: Payload, convo: Conversation, chat?: Chat): void;
 }

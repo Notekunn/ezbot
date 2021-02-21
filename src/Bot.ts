@@ -8,6 +8,7 @@ import Chat from './Chat';
 import { Payload, PayloadType } from './types/Payload';
 import Conversation from './Conversation';
 import getPatternMatcher from './types/MatchPattern';
+import CommandParser from './utils/CommandParser';
 /**
  * Option for listen message
  * @alias ListenOptionsMiddleware
@@ -33,7 +34,7 @@ export interface ListenOptions {
 	 * @default false
 	 */
 	listenEvents?: boolean;
-	pageID?: String;
+	pageID?: string;
 	/**
 	 * Will make listener also return presence
 	 */
@@ -47,7 +48,7 @@ export interface ListenOptions {
 	 * The desired simulated User Agent.
 	 * @example (Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/600.3.18 (KHTML, like Gecko) Version/8.0.3 Safari/600.3.18)
 	 */
-	userAgent?: String;
+	userAgent?: string;
 	/**
 	 * Will automatically mark new messages as delivered.
 	 */
@@ -61,11 +62,11 @@ export interface BotOptions {
 	/**
 	 * The email of bot account
 	 */
-	email: String;
+	email: string;
 	/**
 	 * The password of bot account
 	 */
-	password: String;
+	password: string;
 	/**
 	 * The location which bot state is saved
 	 * Ex: './appstate.json'
@@ -75,6 +76,18 @@ export interface BotOptions {
 	 * The config for bot listen in facebook
 	 */
 	listenOptions?: ListenOptions;
+	/**
+	 * Name of chat bot
+	 */
+	name?: string;
+	/**
+	 * Prefix of bot
+	 */
+	prefix?: string;
+	/**
+	 * List admin bot
+	 */
+	admins?: string[];
 }
 export interface BotEvent extends DefaultEventMap {
 	message: Callback;
@@ -92,6 +105,8 @@ export default class Bot extends EventEmitter<BotEvent> {
 		listenOptions: {
 			listenEvents: true,
 		},
+		name: 'EZ-Bot',
+		prefix: '!#',
 	};
 	private _isLogin: boolean = false;
 	private _conversations: {
@@ -99,9 +114,6 @@ export default class Bot extends EventEmitter<BotEvent> {
 	} = {};
 	private _messageMiddleware: Middleware[] = [];
 	private _eventMiddleware: Middleware[] = [];
-	private _defaultMiddleware: {
-		[key in PayloadType]: Middleware;
-	};
 	private api: any;
 
 	/**
@@ -112,6 +124,7 @@ export default class Bot extends EventEmitter<BotEvent> {
 		super();
 		if (!options || typeof options !== 'object') throw new Error('Need bot options to start!');
 		this.setOptions(options);
+		this.useMiddleWare(this._messageMiddleware, new CommandParser(this));
 		this.on('start', () => {
 			this._isLogin = true;
 		});
@@ -147,6 +160,9 @@ export default class Bot extends EventEmitter<BotEvent> {
 				},
 			};
 		}
+	}
+	getListenOption(): ListenOptions {
+		return this._options.listenOptions || {};
 	}
 	start(options?: ListenOptions): void {
 		if (this._isLogin) return;
@@ -291,16 +307,16 @@ export default class Bot extends EventEmitter<BotEvent> {
 		}
 		middlewares.push(middleware);
 	}
-	hear(patterns: RegExp | String | Array<RegExp | String>, callback: Callback) {
+	hear(patterns: RegExp | string | Array<RegExp | string>, callback: Callback) {
 		if (!Array.isArray(patterns)) patterns = [patterns];
 		const matchPattern = getPatternMatcher(patterns);
 		const middleware = new Middleware('message', (payload, chat, context, next) => {
 			if (payload.type !== 'message' && payload.type !== 'message_reply') return next();
 			const { matched, command, args } = matchPattern(payload.body);
 			if (!matched) return next();
-			context.matched = matched;
-			context.command = command;
-			context.args = args;
+			// context.matched = matched;
+			// context.command = command;
+			// context.args = args;
 			return callback(payload, chat, context, next);
 		});
 		this.use(middleware);
@@ -329,10 +345,10 @@ export default class Bot extends EventEmitter<BotEvent> {
 		return this.api.getCurrentUserID();
 	}
 	sendMessage(
-		message: String | MessageObject,
-		threadID: String,
+		message: string | MessageObject,
+		threadID: string,
 		callback?: Function,
-		messageID?: String
+		messageID?: string
 	): void {
 		if (!callback) {
 			callback = () => {};
@@ -343,19 +359,19 @@ export default class Bot extends EventEmitter<BotEvent> {
 		}
 		return this.api.sendMessage(message, threadID, callback, messageID);
 	}
-	sendTypingIndicator(threadID: String) {
+	sendTypingIndicator(threadID: string) {
 		return this.api.sendTypingIndicator(threadID);
 	}
-	markAsDelivered(threadID: String) {
+	markAsDelivered(threadID: string) {
 		return this.api.markAsDelivered(threadID);
 	}
-	maskAsRead(threadID: String) {
+	maskAsRead(threadID: string) {
 		return this.api.markAsRead(threadID);
 	}
-	muteThread(threadID: String, muteSeconds = 60) {
+	muteThread(threadID: string, muteSeconds = 60) {
 		return this.api.muteThread(threadID, muteSeconds);
 	}
-	setMessageReaction(reaction: String, messageID: String) {
+	setMessageReaction(reaction: string, messageID: string) {
 		return this.api.setMessageReaction(reaction, messageID);
 	}
 	static isBot(instance: any) {

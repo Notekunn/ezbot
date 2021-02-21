@@ -23,10 +23,10 @@ export default class Chat extends EventEmitter<ConversationEvent> {
 		this.bot = bot;
 		this.payload = payload;
 	}
-	say(message: MessageObject | String, callback?: Function): void {
+	say(message: MessageObject | string, callback?: Function): void {
 		this.bot.sendMessage(message, this.payload.threadID, callback);
 	}
-	inbox(message: MessageObject | String, callback?: Function): void {
+	inbox(message: MessageObject | string, callback?: Function): void {
 		if (
 			this.payload.type === 'message' ||
 			this.payload.type === 'message_reaction' ||
@@ -35,7 +35,7 @@ export default class Chat extends EventEmitter<ConversationEvent> {
 			return this.bot.sendMessage(message, this.payload.senderID, callback);
 		throw new Error('Cannot inbox with this event');
 	}
-	reply(message: MessageObject | String, callback?: Function): void {
+	reply(message: MessageObject | string, callback?: Function): void {
 		if (
 			this.payload.type == 'message' ||
 			this.payload.type == 'message_reply' ||
@@ -61,7 +61,7 @@ export default class Chat extends EventEmitter<ConversationEvent> {
 	muteThread(muteSeconds = 60) {
 		return this.bot.muteThread(this.payload.threadID, muteSeconds);
 	}
-	setMessageReaction(reaction: String) {
+	setMessageReaction(reaction: string) {
 		if (
 			this.payload.type == 'message' ||
 			this.payload.type == 'message_reply' ||

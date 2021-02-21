@@ -1,10 +1,10 @@
 interface Mention {
-	tag: String;
-	id: String;
+	tag: string;
+	id: string;
 	fromIndex: Number;
 }
 export default interface MessageObject {
-	body: String;
+	body: string;
 	sticker: any;
 	attachment: any;
 	emoji: any;

@@ -3,15 +3,15 @@ import * as chalk from 'chalk';
  * Log message wrapper with date
  */
 class InfoMessage {
-	message: String;
+	message: string;
 	createdAt: Date;
-	group: String;
+	group: string;
 	/**
-	 * @param  {String} message - Message to show
-	 * @param  {String} [group=SYSTEM] - Group log (custom)
+	 * @param  {string} message - Message to show
+	 * @param  {string} [group=SYSTEM] - Group log (custom)
 	 * @constructor
 	 */
-	constructor(message: String, group = 'SYSTEM') {
+	constructor(message: string, group = 'SYSTEM') {
 		this.message = message;
 		this.createdAt = new Date();
 		this.group = group;

@@ -6,7 +6,11 @@ import Chat from './Chat';
 interface NextFunction {
 	(context?: Object | Error): void;
 }
-interface ContextObject {
+interface CommandParserContext {
+	command?: string;
+	args?: string[];
+}
+interface ContextObject extends CommandParserContext {
 	[key: string]: any;
 }
 export interface Callback {
