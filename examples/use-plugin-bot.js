@@ -1,6 +1,5 @@
 const { Bot, Command } = require('../');
 const { CustomBot } = require('../lib/plugins/CustomBot/');
-const { HelloGroup } = require('../lib/plugins/HelloGroup');
 const config = require('config');
 const path = require('path');
 const bot = new Bot({
@@ -22,11 +21,10 @@ bot.on('error', (error, payload, chat) => {
 });
 bot.use(
 	new CustomBot({
-		name: 'EZBoiiiiiii',
+		name: 'EZZZZZBot',
 		prefix: '!#',
 	})
 )
-	.use(new HelloGroup({}))
 	.use(
 		new Command({ command: 'ping', usage: 'Ping thoi' }, (payload, chat, context) => {
 			chat.say('Pong!');

@@ -1,3 +1,4 @@
+import { CustomPlugin, PluginCallback } from './Plugin';
 import { EventEmitter, DefaultEventMap } from 'tsee';
 import * as login from 'facebook-chat-api';
 import * as fs from 'fs';
@@ -62,16 +63,16 @@ export interface BotOptions {
 	/**
 	 * The email of bot account
 	 */
-	email: string;
+	email?: string;
 	/**
 	 * The password of bot account
 	 */
-	password: string;
+	password?: string;
 	/**
 	 * The location which bot state is saved
 	 * Ex: './appstate.json'
 	 */
-	appStatePath: string;
+	appStatePath?: string;
 	/**
 	 * The config for bot listen in facebook
 	 */
@@ -127,8 +128,6 @@ export default class Bot extends EventEmitter<BotEvent> {
 		this.useMiddleWare(this._messageMiddleware, new CommandParser(this));
 		this.on('start', () => {
 			this._isLogin = true;
-			this.emit('info', new InfoMessage(`Prefix: ${this._options.prefix}`));
-			this.emit('info', new InfoMessage(`Name: ${this._options.name}`));
 		});
 		this.on('stop', () => {
 			this._isLogin = false;
@@ -187,6 +186,9 @@ export default class Bot extends EventEmitter<BotEvent> {
 		this.emit('stop');
 	}
 
+	emitInfo(message: string, group?: string): void {
+		this.emit('info', new InfoMessage(message, group));
+	}
 	listen(): void {
 		if (!this.api) return;
 		this.emit('info', new InfoMessage('Start listen'));
@@ -288,16 +290,29 @@ export default class Bot extends EventEmitter<BotEvent> {
 		if (!convo || !convo.isActive()) return false;
 		return convo.response(payload);
 	}
-	use(middleware: Middleware): this {
-		//Use middleware
-		if (Middleware.isMiddleware(middleware)) {
+	use(factory: Middleware | CustomPlugin | PluginCallback): this {
+		//Use middleware, command
+		if (Middleware.isMiddleware(factory)) {
+			const middleware = <Middleware>factory;
+			this.emit('info', new InfoMessage(middleware.showIntro(), 'BUILD'));
 			if (middleware.type === 'message')
 				this.useMiddleWare(this._messageMiddleware, middleware);
 			else if (middleware.type === 'event')
 				this.useMiddleWare(this._eventMiddleware, middleware);
 			else throw new Error('This middleware type is not supported');
-			this.emit('info', new InfoMessage(`Active middleware: ${middleware.type}`, 'BUILD'));
 			return this;
+		}
+		//Use plugin
+		if (CustomPlugin.isPlugin(factory)) {
+			const plugin = <CustomPlugin>factory;
+			this.emit('info', new InfoMessage(plugin.showIntro(), 'BUILD'));
+			plugin.active(this);
+			return this;
+		}
+		//Use function
+		if (typeof factory == 'function') {
+			const plugin = new CustomPlugin({}, factory);
+			return this.use(plugin);
 		}
 		//Use plugin
 		return this;
@@ -314,11 +329,8 @@ export default class Bot extends EventEmitter<BotEvent> {
 		const matchPattern = getPatternMatcher(patterns);
 		const middleware = new Middleware('message', (payload, chat, context, next) => {
 			if (payload.type !== 'message' && payload.type !== 'message_reply') return next();
-			const { matched, command, args } = matchPattern(payload.body);
+			const { matched } = matchPattern(payload.body);
 			if (!matched) return next();
-			// context.matched = matched;
-			// context.command = command;
-			// context.args = args;
 			return callback(payload, chat, context, next);
 		});
 		this.use(middleware);
@@ -343,7 +355,7 @@ export default class Bot extends EventEmitter<BotEvent> {
 	getAppState(): Object {
 		return this.api.getAppState();
 	}
-	getCurrentUserID(): Number {
+	getCurrentUserID(): string {
 		return this.api.getCurrentUserID();
 	}
 	sendMessage(
@@ -376,6 +388,17 @@ export default class Bot extends EventEmitter<BotEvent> {
 	setMessageReaction(reaction: string, messageID: string) {
 		return this.api.setMessageReaction(reaction, messageID);
 	}
+	changeNickname(nickname: string, threadID: string, participantID?: string) {
+		return this.api.changeNickname(
+			nickname,
+			threadID,
+			participantID || this.getCurrentUserID()
+		);
+	}
+	deleteThread(threads: string | string[]) {
+		return this.api.deleteThread(threads);
+	}
+	replaceMessage(message: string | MessageObject, threadID?: string, senderID?: string) {}
 	static isBot(instance: any) {
 		return instance instanceof Bot;
 	}

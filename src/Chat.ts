@@ -69,6 +69,12 @@ export default class Chat extends EventEmitter<ConversationEvent> {
 		)
 			return this.bot.setMessageReaction(reaction, this.payload.messageID);
 	}
+	changeNickname(nickname: string, participantID?: string) {
+		return this.bot.changeNickname(nickname, this.payload.threadID, participantID);
+	}
+	deleteThread() {
+		return this.bot.deleteThread(this.payload.threadID);
+	}
 	conversation(factory: (covo: Conversation) => void) {
 		return this.bot.conversation(this.payload, factory);
 	}

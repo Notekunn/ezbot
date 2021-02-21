@@ -21,7 +21,7 @@ export interface PayloadEvent extends PayloadTemplate {
 	type: 'event';
 	author: string;
 	logMessageBody: string;
-	logMessageData: Object;
+	logMessageData: any;
 	logMessageType:
 		| 'log:subscribe'
 		| 'log:unsubscribe'

@@ -62,4 +62,7 @@ export default class Middleware {
 	static isMiddleware(instance: any) {
 		return instance instanceof Middleware;
 	}
+	showIntro(): string {
+		return `Active middleware: ${this.type}`;
+	}
 }
