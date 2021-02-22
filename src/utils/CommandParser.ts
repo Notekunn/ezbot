@@ -10,10 +10,10 @@ export default class CommandParser extends Middleware {
 			const { prefix } = bot.getOptions();
 			const message = (<PayloadMessage | PayloadMessageReply>payload).body;
 			if (!message.startsWith(prefix)) return next();
-			const text = message.slice(prefix.length).trim();
-			const [command, ...args] = text.match(regex);
+			const text = `${message.slice(prefix.length)}`.trim() || '';
+			const [command = '', ...args] = text.match(regex);
 			context.command = command.toLowerCase();
-			context.args = args;
+			context.args = args || [];
 			next();
 		});
 	}
