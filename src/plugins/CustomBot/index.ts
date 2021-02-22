@@ -17,6 +17,20 @@ export class CustomBot extends CustomPlugin {
 				bot.emitInfo(`Prefix: ${bot.getOptions().prefix}`);
 				bot.emitInfo(`Name: ${bot.getOptions().name}`);
 			});
+			const helloPattern = [
+				/bot ơi/i,
+				new RegExp(options.name, 'gi'),
+				new RegExp(`Accio`, 'i'),
+			];
+			bot.hear(helloPattern, (payload, chat) => {
+				const { name, prefix } = bot.getOptions();
+				chat.say(`${name} ready!\n` + `Prefix: ${prefix}`, () => {
+					if (!bot.get(`SET_NAME_${payload.threadID}`)) {
+						chat.changeNickname(`[${prefix}] ${name}`);
+						bot.set(`SET_NAME_${payload.threadID}`, true);
+					}
+				});
+			});
 		});
 	}
 }

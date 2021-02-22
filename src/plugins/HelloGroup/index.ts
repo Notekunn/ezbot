@@ -20,8 +20,12 @@ export class HelloGroup extends CustomPlugin {
 							event.logMessageData.addedParticipants || [];
 						if (addedParticipants.find((e) => e.userFbId == bot.getCurrentUserID())) {
 							bot.emitInfo(`Added into group: ${event.threadID}`, 'BOT');
-							chat.say(`${name} ready!\n` + `Prefix: ${prefix}`);
-							chat.changeNickname(`[${prefix}] ${name}`, bot.getCurrentUserID());
+							chat.say(`${name} ready!\n` + `Prefix: ${prefix}`, () => {
+								if (!bot.get(`SET_NAME_${event.threadID}`)) {
+									chat.changeNickname(`[${prefix}] ${name}`);
+									bot.set(`SET_NAME_${event.threadID}`, true);
+								}
+							});
 						}
 					}
 					if (event.logMessageType == 'log:unsubscribe') {

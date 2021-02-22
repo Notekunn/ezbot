@@ -98,17 +98,22 @@ export interface BotEvent extends DefaultEventMap {
 	info: (message: InfoMessage) => void;
 	error: (error: Error, payload: Payload, chat: Chat, context: Object) => void;
 }
+interface BotCache {
+	[key: string]: any;
+}
+const defaultOptions: BotOptions = {
+	email: '',
+	password: '',
+	appStatePath: '',
+	listenOptions: {
+		listenEvents: true,
+	},
+	name: 'EZ-Bot',
+	prefix: '!#',
+};
+
 export default class Bot extends EventEmitter<BotEvent> {
-	private _options: BotOptions = {
-		email: '',
-		password: '',
-		appStatePath: '',
-		listenOptions: {
-			listenEvents: true,
-		},
-		name: 'EZ-Bot',
-		prefix: '!#',
-	};
+	private _options: BotOptions = defaultOptions;
 	private _isLogin: boolean = false;
 	private _conversations: {
 		[key: string]: Conversation;
@@ -116,6 +121,7 @@ export default class Bot extends EventEmitter<BotEvent> {
 	private _messageMiddleware: Middleware[] = [];
 	private _eventMiddleware: Middleware[] = [];
 	private api: any;
+	private cache: BotCache = {};
 
 	/**
 	 * Init a bot instance
@@ -181,11 +187,9 @@ export default class Bot extends EventEmitter<BotEvent> {
 			this.listen();
 		});
 	}
-
 	stop(): void {
 		this.emit('stop');
 	}
-
 	emitInfo(message: string, group?: string): void {
 		this.emit('info', new InfoMessage(message, group));
 	}
@@ -401,5 +405,11 @@ export default class Bot extends EventEmitter<BotEvent> {
 	replaceMessage(message: string | MessageObject, threadID?: string, senderID?: string) {}
 	static isBot(instance: any) {
 		return instance instanceof Bot;
+	}
+	get(property: string) {
+		return this.cache[property];
+	}
+	set(property: string, value: any) {
+		this.cache[property] = value;
 	}
 }

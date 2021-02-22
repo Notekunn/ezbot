@@ -6,8 +6,8 @@ interface PluginInfo {
 	description?: string;
 }
 const defaultInfo: PluginInfo = {
-	name: 'Ezbot Plugin',
-	version: '1.0.1',
+	name: 'Anonymous Plugin',
+	version: '1.0.0',
 };
 export interface PluginCallback {
 	(bot: Bot): void;
