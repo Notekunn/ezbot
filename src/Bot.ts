@@ -97,6 +97,7 @@ export interface BotEvent extends DefaultEventMap {
 	message_reaction: Callback;
 	info: (message: InfoMessage) => void;
 	error: (error: Error, payload: Payload, chat: Chat, context: Object) => void;
+	update_options: (options: BotOptions) => void;
 }
 interface BotCache {
 	[key: string]: any;
@@ -154,19 +155,19 @@ export default class Bot extends EventEmitter<BotEvent> {
 			...this._options,
 			...options,
 		};
+		this.emit('update_options', this._options);
 	}
 	getOptions(): BotOptions {
 		return this._options;
 	}
 	private setListenOptions(options: ListenOptions) {
 		if (options) {
-			this._options = {
-				...this._options,
+			this.setOptions({
 				listenOptions: {
 					...this._options.listenOptions,
 					...options,
 				},
-			};
+			});
 		}
 	}
 	getListenOption(): ListenOptions {
