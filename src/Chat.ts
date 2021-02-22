@@ -1,8 +1,9 @@
 import Bot from './Bot';
-import { Payload } from './types/Payload';
+import { Payload, PayloadMessage, PayloadMessageReaction } from './types/Payload';
 import MessageObject from './types/MessageObject';
 import Conversation from './Conversation';
 import { EventEmitter, DefaultEventMap } from 'tsee';
+import { threadId } from 'worker_threads';
 export interface ConversationEvent extends DefaultEventMap {
 	end: (convo: Conversation) => void;
 	start: (convo: Conversation) => void;
@@ -77,5 +78,17 @@ export default class Chat extends EventEmitter<ConversationEvent> {
 	}
 	conversation(factory: (covo: Conversation) => void) {
 		return this.bot.conversation(this.payload, factory);
+	}
+	addUserToGroup(senderID: string, callback?: Function) {
+		return this.bot.addUserToGroup(senderID, this.payload.threadID, callback);
+	}
+	removeUserFromGroup(senderID: string, callback?: Function) {
+		return this.bot.removeUserFromGroup(senderID, this.payload.threadID, callback);
+	}
+	unsendMessage(callback?: Function) {
+		return this.bot.unsendMessage(
+			(<PayloadMessage | PayloadMessageReaction>this.payload).messageID,
+			callback
+		);
 	}
 }

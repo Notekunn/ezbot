@@ -2,7 +2,7 @@ import { CustomPlugin } from '../../Plugin';
 interface Options {
 	prefix: string;
 	name: string;
-	admin: string;
+	admins: string[];
 }
 export class CustomBot extends CustomPlugin {
 	constructor(options: Options) {

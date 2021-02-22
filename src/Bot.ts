@@ -110,6 +110,7 @@ const defaultOptions: BotOptions = {
 	},
 	name: 'EZ-Bot',
 	prefix: '!#',
+	admins: [],
 };
 
 export default class Bot extends EventEmitter<BotEvent> {
@@ -263,6 +264,8 @@ export default class Bot extends EventEmitter<BotEvent> {
 					break;
 				case 'event':
 					eventHandler.execute(payload, chat, context);
+				case 'message_reaction':
+					this.emit('message_reaction', payload, chat, context, () => {});
 				default:
 					break;
 			}
@@ -298,7 +301,7 @@ export default class Bot extends EventEmitter<BotEvent> {
 		//Use middleware, command
 		if (Middleware.isMiddleware(factory)) {
 			const middleware = <Middleware>factory;
-			this.emit('info', new InfoMessage(middleware.showIntro(), 'BUILD'));
+			// this.emit('info', new InfoMessage(middleware.showIntro(), 'BUILD'));
 			if (middleware.type === 'message')
 				this.useMiddleWare(this._messageMiddleware, middleware);
 			else if (middleware.type === 'event')
@@ -402,7 +405,17 @@ export default class Bot extends EventEmitter<BotEvent> {
 	deleteThread(threads: string | string[]) {
 		return this.api.deleteThread(threads);
 	}
+	addUserToGroup(userID: string, threadID: string, callback?: Function) {
+		return this.api.addUserToGroup(userID, threadID, callback);
+	}
+	removeUserFromGroup(userID: string, threadID: string, callback?: Function) {
+		return this.api.removeUserFromGroup(userID, threadID, callback);
+	}
+	unsendMessage(messageID: string, callback?: Function) {
+		return this.api.unsendMessage(messageID, callback);
+	}
 	replaceMessage(message: string | MessageObject, threadID?: string, senderID?: string) {}
+
 	static isBot(instance: any) {
 		return instance instanceof Bot;
 	}

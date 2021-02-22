@@ -15,7 +15,8 @@ export interface PluginCallback {
 export class CustomPlugin {
 	private info: PluginInfo;
 	private callback: PluginCallback;
-	constructor(info: PluginInfo, callback: PluginCallback) {
+	protected enabled: boolean = true;
+	constructor(info: PluginInfo, callback?: PluginCallback) {
 		if (!info) throw new Error('Info Plugin ?');
 		this.info = {
 			...defaultInfo,
@@ -26,11 +27,20 @@ export class CustomPlugin {
 	static isPlugin(o: any): boolean {
 		return o instanceof CustomPlugin;
 	}
+	setCallback(callback: PluginCallback) {
+		this.callback = callback;
+	}
 	active(bot: Bot) {
 		if (!Bot.isBot(bot)) throw new Error('Need bot instance');
 		this.callback(bot);
 	}
 	showIntro(): string {
 		return `Active plugin: ${this.info.name || 'Anonymous'}@${this.info.version}`;
+	}
+	enable() {
+		this.enabled = true;
+	}
+	disable() {
+		this.enabled = false;
 	}
 }
