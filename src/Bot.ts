@@ -121,7 +121,7 @@ const defaultOptions: BotOptions = {
 };
 
 export default class Bot extends EventEmitter<BotEvent> {
-  private _options: BotOptions = defaultOptions;
+  private _options: BotOptions;
   private _isLogin: boolean = false;
   private _conversations: {
     [key: string]: Conversation;
@@ -142,7 +142,10 @@ export default class Bot extends EventEmitter<BotEvent> {
   constructor(options: BotOptions) {
     super();
     if (!options || typeof options !== 'object') throw new Error('Need bot options to start!');
-    this.setOptions(options);
+    this._options = {
+      ...defaultOptions,
+      ...options,
+    };
     this.useMiddleWare(this._messageMiddleware, new CommandParser(this));
     this.on('start', () => {
       this._isLogin = true;
@@ -167,6 +170,9 @@ export default class Bot extends EventEmitter<BotEvent> {
     };
     this.emit('update_options', this._options);
   }
+  setOptionsForce(options: BotOptions) {
+    this._options = options;
+  }
   getOptions(): BotOptions {
     return this._options;
   }
@@ -185,7 +191,6 @@ export default class Bot extends EventEmitter<BotEvent> {
   }
   start(options?: ListenOptions): void {
     if (this._isLogin) return;
-    this.emit('start');
     this.setListenOptions(options);
     const { email, password, listenOptions = {} } = this._options;
     const appState: Object = this._readAppState();
@@ -193,6 +198,7 @@ export default class Bot extends EventEmitter<BotEvent> {
     this.setup();
     login(identy, listenOptions, (error: any, api: any) => {
       if (error) return this.emit('error:login', error);
+      this.emit('start');
       this.api = api;
       this._writeAppState();
       this.emit('info', new InfoMessage('Login successfully'));

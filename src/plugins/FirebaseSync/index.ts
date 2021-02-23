@@ -5,6 +5,7 @@ import { PayloadMessage } from '../../types/Payload';
 interface Options {
   serviceAccount: any;
   databaseURL: string;
+  forceWriteOptions: boolean;
 }
 const details = {
   name: 'FirebaseSync',
@@ -12,6 +13,7 @@ const details = {
   version: '1.0.1-beta',
 };
 export class FirebaseSync extends CustomPlugin {
+  private isReady: boolean;
   private options: Options;
   private db: admin.database.Database;
   rootRef: admin.database.Reference;
@@ -21,6 +23,7 @@ export class FirebaseSync extends CustomPlugin {
     }
     super(details);
     this.options = options;
+    this.isReady = false;
     this.initFirebase();
     this.setCallback(this.sync.bind(this));
   }
@@ -40,11 +43,10 @@ export class FirebaseSync extends CustomPlugin {
     this.rootRef = this.db.ref('ezbot');
   }
   sync(bot: Bot) {
-    // this.syncUser(bot);
-    // this.syncThread(bot);
     this.syncRef(bot, 'users');
     this.syncRef(bot, 'threads');
     this.syncRef(bot, 'black_list');
+    this.syncOptions(bot);
     bot.on('message', (payload: PayloadMessage, chat, next) => {
       const { senderID, threadID } = payload;
       this.updateUser(bot, senderID);
@@ -68,6 +70,26 @@ export class FirebaseSync extends CustomPlugin {
     ref.on('child_removed', (snapshot) => {
       const key = snapshot.key;
       bot.cache[child][key] = null;
+    });
+  }
+  private syncOptions(bot: Bot) {
+    const optionRef = bot.rootRef.child('config');
+    optionRef.on('value', (snapshot) => {
+      if (this.options.forceWriteOptions) bot.setOptionsForce(snapshot.val() || {});
+      else bot.setOptions(snapshot.val() || {});
+      this.isReady = true;
+    });
+    optionRef.child('prefix').on('value', (snapshot) => {
+      if (!this.isReady) return;
+      bot.emitInfo(`Prefix Change: ${snapshot.val()}`);
+    });
+    optionRef.child('name').on('value', (snapshot) => {
+      if (!this.isReady) return;
+      bot.emitInfo(`Name Change: ${snapshot.val()}`);
+    });
+    bot.on('update_options', (options) => {
+      if (!this.isReady) return;
+      optionRef.update(options || {});
     });
   }
   updateUser(bot: Bot, senderID: string) {
