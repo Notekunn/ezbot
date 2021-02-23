@@ -44,7 +44,7 @@ bot
     })
   )
   .use(
-    new Command({ command: 'ping', usage: 'Ping thoi' }, (payload, chat, context) => {
+    new Command({ command: 'ping', usage: '{prefix}ping' }, (payload, chat, context) => {
       chat.say('Pong!');
     })
   );

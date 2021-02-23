@@ -1,5 +1,6 @@
 import { PayloadType, Payload } from './types/Payload';
 import Chat from './Chat';
+import Bot from './Bot';
 /**
  * Callback
  */
@@ -64,5 +65,16 @@ export default class Middleware {
   }
   showIntro(): string {
     return `Active middleware: ${this.type}`;
+  }
+  //active bot
+  active(bot: Bot) {
+    let type: PayloadType = this.type;
+    if (type == 'message_reply') type = 'message';
+    const middlewares = bot._middlewares[type];
+    const lastMiddleware = middlewares[middlewares.length - 1];
+    if (lastMiddleware) {
+      lastMiddleware.setNext(this);
+    }
+    middlewares.push(this);
   }
 }

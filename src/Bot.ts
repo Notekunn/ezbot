@@ -1,18 +1,20 @@
 import { CustomPlugin, PluginCallback } from './Plugin';
 import { EventEmitter, DefaultEventMap } from 'tsee';
+import * as utils from './utils/';
 import * as login from 'facebook-chat-api';
 import * as fs from 'fs';
 import InfoMessage from './utils/InfoMessage';
 import MessageObject from './types/MessageObject';
 import Middleware, { Callback } from './Middleware';
 import Chat from './Chat';
-import { Payload } from './types/Payload';
+import { Payload, PayloadType } from './types/Payload';
 import Conversation from './Conversation';
 import getPatternMatcher from './types/MatchPattern';
 import CommandParser from './utils/CommandParser';
 import { database } from 'firebase-admin';
+import HelpCommand from './utils/HelpCommand';
 
-/**
+/**string | MessageObject
  * Option for listen message
  * @alias ListenOptionsMiddleware
  * @type {Object}MiddlewareMiddleware
@@ -126,8 +128,15 @@ export default class Bot extends EventEmitter<BotEvent> {
   private _conversations: {
     [key: string]: Conversation;
   } = {};
-  private _messageMiddleware: Middleware[] = [];
-  private _eventMiddleware: Middleware[] = [];
+  public _commands: {
+    [key: string]: any;
+  } = {};
+  public _middlewares: {
+    [key in PayloadType]?: Middleware[];
+  } = {
+    event: [],
+    message: [],
+  };
   private api: any;
   cache: BotCache = {
     users: {},
@@ -146,7 +155,8 @@ export default class Bot extends EventEmitter<BotEvent> {
       ...defaultOptions,
       ...options,
     };
-    this.useMiddleWare(this._messageMiddleware, new CommandParser(this));
+    new CommandParser(this).active(this);
+    this.use(new HelpCommand(this));
     this.on('start', () => {
       this._isLogin = true;
     });
@@ -232,8 +242,8 @@ export default class Bot extends EventEmitter<BotEvent> {
     });
     messageMiddleware.setNext(errorHandler);
     eventMiddleware.setNext(errorHandler);
-    this.useMiddleWare(this._messageMiddleware, messageMiddleware);
-    this.useMiddleWare(this._eventMiddleware, eventMiddleware);
+    messageMiddleware.active(this);
+    eventMiddleware.active(this);
   }
   private _writeAppState(): void {
     if (!this._isLogin) return;
@@ -265,8 +275,8 @@ export default class Bot extends EventEmitter<BotEvent> {
     this.emit('info', new InfoMessage('Dọn dẹp thành công'));
   }
   private _getListener() {
-    const messageHandler = this._getMessageHandler();
-    const eventHandler = this._getEventHandler();
+    const messageHandler = this._middlewares.message[0];
+    const eventHandler = this._middlewares.event[0];
     const conversationHandler = this._handleConversationResponse.bind(this);
     return (error: any, payload: Payload) => {
       if (error) return this.emit('error:listen', error);
@@ -287,14 +297,6 @@ export default class Bot extends EventEmitter<BotEvent> {
           break;
       }
     };
-  }
-  private _getMessageHandler(): Middleware {
-    const first = this._messageMiddleware[0];
-    return first;
-  }
-  private _getEventHandler(): Middleware {
-    const first = this._eventMiddleware[0];
-    return first;
   }
   private _getConversationKey(payload: Payload): string {
     const conversationKey = payload.threadID + '_';
@@ -318,10 +320,8 @@ export default class Bot extends EventEmitter<BotEvent> {
     //Use middleware, command
     if (Middleware.isMiddleware(factory)) {
       const middleware = <Middleware>factory;
-      // this.emit('info', new InfoMessage(middleware.showIntro(), 'BUILD'));
-      if (middleware.type === 'message') this.useMiddleWare(this._messageMiddleware, middleware);
-      else if (middleware.type === 'event') this.useMiddleWare(this._eventMiddleware, middleware);
-      else throw new Error('This middleware type is not supported');
+      this.emit('info', new InfoMessage(middleware.showIntro(), 'BUILD'));
+      middleware.active(this);
       return this;
     }
     //Use plugin
@@ -338,13 +338,6 @@ export default class Bot extends EventEmitter<BotEvent> {
     }
     //Use plugin
     return this;
-  }
-  private useMiddleWare(middlewares: Middleware[], middleware: Middleware): void {
-    const lastMiddleware = middlewares[middlewares.length - 1];
-    if (lastMiddleware) {
-      lastMiddleware.setNext(middleware);
-    }
-    middlewares.push(middleware);
   }
   hear(patterns: RegExp | string | Array<RegExp | string>, callback: Callback) {
     if (!Array.isArray(patterns)) patterns = [patterns];
@@ -429,7 +422,14 @@ export default class Bot extends EventEmitter<BotEvent> {
   getThreadInfo(thread: string, callback?: (err: Error, info: any) => void) {
     return this.api.getThreadInfo(thread, callback);
   }
-  replaceMessage(message: string | MessageObject, threadID?: string, senderID?: string) {}
+  replaceMessage(message: string | MessageObject, values?: Object): string | MessageObject {
+    if (typeof message == 'string') return utils.formatString(message, values);
+    if (typeof message == 'object' && message.body)
+      return {
+        ...message,
+        body: utils.formatString(message.body, values),
+      };
+  }
 
   static isBot(instance: any) {
     return instance instanceof Bot;

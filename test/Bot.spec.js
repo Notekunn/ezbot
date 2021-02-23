@@ -1,4 +1,4 @@
-const { Bot } = require('..');
+// const { Bot } = require('..');
 
-const bot = new Bot({});
-console.log(bot);
+// const bot = new Bot({});
+// console.log(bot);
