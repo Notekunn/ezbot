@@ -1,12 +1,13 @@
 const { Bot, Command } = require('../');
 const { CustomBot, HelloGroup, FirebaseSync } = require('../lib/plugins/');
 const serviceAccount = require('./serviceAccount.json');
+const { API_KEY } = require('./simsimi.json');
 const config = require('config');
-const path = require('path');
+const axios = require('axios').default;
 const bot = new Bot({
   email: config.get('email'),
   password: config.get('password'),
-  appStatePath: path.resolve(__dirname, '../appstate.json'),
+  appStatePath: '../appstate.json',
   listenOptions: {
     logLevel: 'info',
   },
@@ -46,6 +47,25 @@ bot
   .use(
     new Command({ command: 'ping', usage: '{prefix}ping' }, (payload, chat, context) => {
       chat.say('Pong!');
+    })
+  )
+  .use(
+    new Command({ command: 'sim', usage: '{prefix}sim' }, (payload, chat, context) => {
+      const text = context.textWithoutCommand;
+      if (!text) return;
+      axios
+        .get('http://api.simsimi.com/request.p', {
+          params: {
+            key: API_KEY,
+            lc: 'vn',
+            ft: '0.0',
+            text,
+          },
+        })
+        .then((res) => res.data)
+        .then((data) => {
+          chat.reply(data.response || 'Khong tim thay cau tra loi');
+        });
     })
   );
 bot.start();

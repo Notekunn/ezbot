@@ -10,6 +10,7 @@ interface NextFunction {
 interface CommandParserContext {
   command?: string;
   args?: string[];
+  textWithoutCommand?: string;
 }
 interface ContextObject extends CommandParserContext {
   [key: string]: any;

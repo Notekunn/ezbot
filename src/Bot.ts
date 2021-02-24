@@ -320,7 +320,7 @@ export default class Bot extends EventEmitter<BotEvent> {
     //Use middleware, command
     if (Middleware.isMiddleware(factory)) {
       const middleware = <Middleware>factory;
-      this.emit('info', new InfoMessage(middleware.showIntro(), 'BUILD'));
+      // this.emit('info', new InfoMessage(middleware.showIntro(), 'BUILD'));
       middleware.active(this);
       return this;
     }

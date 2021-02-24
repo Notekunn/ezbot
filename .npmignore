@@ -3,3 +3,4 @@ src
 appstate.json
 docs
 .vscode
+examples/*.json

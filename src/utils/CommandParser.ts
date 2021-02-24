@@ -14,6 +14,7 @@ export default class CommandParser extends Middleware {
       const [command = '', ...args] = text.match(regex);
       context.command = command.toLowerCase();
       context.args = args || [];
+      context.textWithoutCommand = args ? args.join(' ') : '';
       next();
     });
   }
